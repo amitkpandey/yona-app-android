@@ -25,11 +25,11 @@ import android.preference.PreferenceFragment;
 import java.io.File;
 import java.util.Collection;
 
-import nu.yona.app.BuildConfig;
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.api.ExternalAppDatabase;
 import de.blinkt.openvpn.core.ProfileManager;
+import nu.yona.app.BuildConfig;
+import nu.yona.app.R;
 
 
 public class GeneralSettings extends PreferenceFragment implements OnPreferenceClickListener, OnClickListener, Preference.OnPreferenceChangeListener {

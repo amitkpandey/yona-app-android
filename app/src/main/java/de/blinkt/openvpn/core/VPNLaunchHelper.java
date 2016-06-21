@@ -17,8 +17,8 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Vector;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
+import nu.yona.app.R;
 
 public class VPNLaunchHelper {
     private static final String MININONPIEVPN = "nopie_openvpn";

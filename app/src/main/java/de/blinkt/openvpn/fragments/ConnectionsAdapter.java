@@ -24,9 +24,9 @@ import android.widget.Switch;
 
 import java.util.Arrays;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.core.Connection;
+import nu.yona.app.R;
 
 public class ConnectionsAdapter extends RecyclerView.Adapter<ConnectionsAdapter.ConnectionsHolder> {
     private final Context mContext;

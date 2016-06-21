@@ -23,8 +23,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.core.VpnStatus;
+import nu.yona.app.R;
 
 public class SendDumpFragment extends Fragment  {
 

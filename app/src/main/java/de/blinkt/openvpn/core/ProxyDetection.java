@@ -14,8 +14,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
+import nu.yona.app.R;
 
 public class ProxyDetection {
 	static SocketAddress detectProxy(VpnProfile vp) {

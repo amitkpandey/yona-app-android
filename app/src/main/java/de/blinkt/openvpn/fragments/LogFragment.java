@@ -52,11 +52,9 @@ import java.util.Locale;
 import java.util.Vector;
 
 import de.blinkt.openvpn.LaunchVPN;
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.activities.DisconnectVPN;
 import de.blinkt.openvpn.activities.MainActivity;
-import de.blinkt.openvpn.activities.VPNPreferences;
 import de.blinkt.openvpn.core.LogItem;
 import de.blinkt.openvpn.core.OpenVPNManagement;
 import de.blinkt.openvpn.core.OpenVPNService;
@@ -65,6 +63,7 @@ import de.blinkt.openvpn.core.VpnStatus;
 import de.blinkt.openvpn.core.VpnStatus.ConnectionStatus;
 import de.blinkt.openvpn.core.VpnStatus.LogListener;
 import de.blinkt.openvpn.core.VpnStatus.StateListener;
+import nu.yona.app.R;
 
 import static de.blinkt.openvpn.core.OpenVPNService.humanReadableByteCount;
 
@@ -430,17 +429,7 @@ public class LogFragment extends ListFragment implements StateListener, SeekBar.
             return true;
         } else if (item.getItemId() == R.id.send) {
             ladapter.shareLog();
-        } else if (item.getItemId() == R.id.edit_vpn) {
-            VpnProfile lastConnectedprofile = ProfileManager.getLastConnectedVpn();
-
-            if (lastConnectedprofile != null) {
-                Intent vprefintent = new Intent(getActivity(), VPNPreferences.class)
-                        .putExtra(VpnProfile.EXTRA_PROFILEUUID, lastConnectedprofile.getUUIDString());
-                startActivityForResult(vprefintent, START_VPN_CONFIG);
-            } else {
-                Toast.makeText(getActivity(), R.string.log_no_last_vpn, Toast.LENGTH_LONG).show();
-            }
-        } else if (item.getItemId() == R.id.toggle_time) {
+        }  else if (item.getItemId() == R.id.toggle_time) {
             showHideOptionsPanel();
         } else if (item.getItemId() == android.R.id.home) {
             // This is called when the Home (Up) button is pressed

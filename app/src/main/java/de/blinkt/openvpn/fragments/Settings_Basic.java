@@ -32,12 +32,12 @@ import android.widget.TextView;
 
 import java.security.cert.X509Certificate;
 
-import nu.yona.app.R;
-import nu.yona.app.R.id;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.core.ProfileManager;
 import de.blinkt.openvpn.core.X509Utils;
 import de.blinkt.openvpn.views.FileSelectLayout;
+import nu.yona.app.R;
+import nu.yona.app.R.id;
 
 public class Settings_Basic extends Settings_Fragment implements View.OnClickListener, OnItemSelectedListener, Callback, FileSelectLayout.FileSelectCallback {
 	private static final int CHOOSE_FILE_OFFSET = 1000;

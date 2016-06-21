@@ -20,11 +20,11 @@ import android.util.Pair;
 
 import java.io.IOException;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.activities.FileSelect;
 import de.blinkt.openvpn.core.VpnStatus;
 import de.blinkt.openvpn.views.RemoteCNPreference;
+import nu.yona.app.R;
 
 
 public class Settings_Authentication extends OpenVpnPreferencesFragment implements OnPreferenceChangeListener, OnPreferenceClickListener {

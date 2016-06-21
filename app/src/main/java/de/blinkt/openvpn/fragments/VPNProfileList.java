@@ -40,7 +40,6 @@ import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.activities.ConfigConverter;
 import de.blinkt.openvpn.activities.DisconnectVPN;
 import de.blinkt.openvpn.activities.FileSelect;
-import de.blinkt.openvpn.activities.VPNPreferences;
 import de.blinkt.openvpn.core.ProfileManager;
 import de.blinkt.openvpn.core.VpnStatus;
 import nu.yona.app.R;
@@ -95,14 +94,14 @@ public class VPNProfileList extends ListFragment implements OnClickListener, Vpn
             });
 
             View settingsview = v.findViewById(R.id.quickedit_settings);
-            settingsview.setOnClickListener(new OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    editVPN(profile);
-
-                }
-            });
+//            settingsview.setOnClickListener(new OnClickListener() {
+//
+//                @Override
+//                public void onClick(View v) {
+//                    //editVPN(profile);
+//
+//                }
+//            });
 
             TextView subtitle = (TextView) v.findViewById(R.id.vpn_item_subtitle);
             if (ProfileManager.getLastConnectedVpn() == profile) {
@@ -352,7 +351,7 @@ public class VPNProfileList extends ListFragment implements OnClickListener, Vpn
                                     profile = new VpnProfile(name);
 
                                 addProfile(profile);
-                                editVPN(profile);
+                                //editVPN(profile);
                             } else {
                                 Toast.makeText(getActivity(), R.string.duplicate_profile_name, Toast.LENGTH_LONG).show();
                             }
@@ -429,14 +428,6 @@ public class VPNProfileList extends ListFragment implements OnClickListener, Vpn
         startActivityForResult(startImport, IMPORT_PROFILE);
     }
 
-
-    private void editVPN(VpnProfile profile) {
-        mEditProfile = profile;
-        Intent vprefintent = new Intent(getActivity(), VPNPreferences.class)
-                .putExtra(getActivity().getPackageName() + ".profileUUID", profile.getUUID().toString());
-
-        startActivityForResult(vprefintent, START_VPN_CONFIG);
-    }
 
     private void startVPN(VpnProfile profile) {
 

@@ -28,9 +28,9 @@ import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Vector;
 
-import nu.yona.app.BuildConfig;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.core.VpnStatus.ConnectionStatus;
+import nu.yona.app.BuildConfig;
 import nu.yona.app.R;
 
 public class OpenVpnManagementThread implements Runnable, OpenVPNManagement {

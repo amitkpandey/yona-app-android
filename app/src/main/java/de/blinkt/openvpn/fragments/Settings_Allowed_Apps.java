@@ -35,9 +35,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Vector;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.core.ProfileManager;
+import nu.yona.app.R;
 
 /**
  * Created by arne on 16.11.14.

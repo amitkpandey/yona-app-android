@@ -35,8 +35,8 @@ import java.util.Vector;
 
 import javax.security.auth.x500.X500Principal;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
+import nu.yona.app.R;
 
 public class X509Utils {
 	public static Certificate[] getCertificatesFromFile(String certfilename) throws FileNotFoundException, CertificateException {

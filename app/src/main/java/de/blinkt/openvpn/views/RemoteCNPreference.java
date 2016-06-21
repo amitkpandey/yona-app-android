@@ -15,8 +15,8 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
+import nu.yona.app.R;
 
 public class RemoteCNPreference extends DialogPreference {
 

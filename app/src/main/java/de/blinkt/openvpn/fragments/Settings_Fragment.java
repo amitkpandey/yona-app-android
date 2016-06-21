@@ -8,9 +8,9 @@ package de.blinkt.openvpn.fragments;
 import android.app.Fragment;
 import android.os.Bundle;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.VpnProfile;
 import de.blinkt.openvpn.core.ProfileManager;
+import nu.yona.app.R;
 
 public abstract class Settings_Fragment extends Fragment {
 

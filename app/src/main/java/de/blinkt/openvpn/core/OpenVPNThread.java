@@ -24,8 +24,8 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import nu.yona.app.R;
 import de.blinkt.openvpn.core.VpnStatus.ConnectionStatus;
+import nu.yona.app.R;
 
 public class OpenVPNThread implements Runnable {
     private static final String DUMP_PATH_STRING = "Dump path: ";

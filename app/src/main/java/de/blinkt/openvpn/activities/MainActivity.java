@@ -13,12 +13,10 @@ import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.support.v4n.view.ViewPager;
-import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import de.blinkt.openvpn.fragments.FaqFragment;
 import de.blinkt.openvpn.fragments.GeneralSettings;
 import de.blinkt.openvpn.fragments.LogFragment;
 import de.blinkt.openvpn.fragments.SendDumpFragment;
@@ -54,7 +52,6 @@ public class MainActivity extends BaseActivity {
         mPagerAdapter.addTab(R.string.vpn_list_title, VPNProfileList.class);
 
         mPagerAdapter.addTab(R.string.generalsettings, GeneralSettings.class);
-        mPagerAdapter.addTab(R.string.faq, FaqFragment.class);
 
         if (SendDumpFragment.getLastestDump(this) != null) {
             mPagerAdapter.addTab(R.string.crashdump, SendDumpFragment.class);
