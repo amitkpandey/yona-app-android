@@ -39,6 +39,7 @@ import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.transition.ChangeBounds;
 import android.transition.Slide;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -51,6 +52,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 
+import de.blinkt.openvpn.VpnProfile;
+import de.blinkt.openvpn.activities.ConfigConverter;
 import nu.yona.app.R;
 import nu.yona.app.YonaApplication;
 import nu.yona.app.api.db.DatabaseHelper;
@@ -61,6 +64,7 @@ import nu.yona.app.api.model.User;
 import nu.yona.app.api.utils.ServerErrorCode;
 import nu.yona.app.customview.CustomAlertDialog;
 import nu.yona.app.enums.IntentEnum;
+import nu.yona.app.listener.DataLoadListener;
 import nu.yona.app.state.EventChangeListener;
 import nu.yona.app.state.EventChangeManager;
 import nu.yona.app.ui.challenges.ChallengesFragment;
@@ -211,7 +215,6 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
             }
             hideSoftInput();
         }
-        AppUtils.startVPN(this);
     }
 
     @Override
@@ -280,6 +283,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
             showPermissionAlert();
         } else {
             AppUtils.startService(this);
+            checkVPN();
         }
     }
 
@@ -292,6 +296,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                 } else {
                     checkPermission();
                 }
+                checkVPN();
                 break;
             case PICK_CONTACT:
                 if (resultCode == RESULT_OK) {
@@ -308,6 +313,11 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                     loadCaptureImage(data);
                 }
                 break;
+            case IMPORT_PROFILE:
+                if (resultCode == RESULT_OK) {
+                    YonaApplication.getUserPreferences().edit().putString(AppConstant.PROFILE_UUID, data.getStringExtra(VpnProfile.EXTRA_PROFILEUUID)).commit();
+                }
+                AppUtils.startVPN(this);
             default:
                 break;
         }
@@ -394,6 +404,8 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                isToDisplayLogin = false;
+                skipVerification = true;
                 startActivityForResult(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS), MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS);
             }
         });
@@ -401,6 +413,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
+                checkVPN();
             }
         });
         builder.setCancelable(false);
@@ -957,5 +970,45 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
         } else if (requestCode == AppConstant.READ_CONTACTS_PERMISSIONS_REQUEST) {
             openContactBook();
         }
+    }
+
+    private void checkVPN() {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                isToDisplayLogin = false;
+                skipVerification = true;
+                if (YonaApplication.getUserPreferences().getString(AppConstant.PROFILE_UUID, "").equals("")) {
+                    copyProfile();
+                } else {
+                    AppUtils.startVPN(YonaActivity.this);
+                }
+            }
+        }, AppConstant.ONE_SECOND);
+    }
+
+    private void copyProfile() {
+        AppUtils.writeToFile(YonaActivity.this, new DataLoadListener() {
+            @Override
+            public void onDataLoad(Object result) {
+                importVPNProfile();
+            }
+
+            @Override
+            public void onError(Object errorMessage) {
+                Log.e(YonaActivity.class.getSimpleName(), ((ErrorMessage) errorMessage).getMessage());
+            }
+        });
+    }
+
+    private void importVPNProfile() {
+        isToDisplayLogin = false;
+        skipVerification = true;
+        Intent startImport = new Intent(this, ConfigConverter.class);
+        startImport.setAction(ConfigConverter.IMPORT_PROFILE);
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + AppConstant.YONA_FOLDER + "/profile.ovpn");
+        startImport.setData(uri);
+        startActivityForResult(startImport, IMPORT_PROFILE);
+        AppUtils.startVPN(YonaActivity.this);
     }
 }

@@ -11,19 +11,12 @@
 package nu.yona.app.ui.signup;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.View;
 
-import java.io.File;
-
-import de.blinkt.openvpn.VpnProfile;
-import de.blinkt.openvpn.activities.ConfigConverter;
 import nu.yona.app.R;
 import nu.yona.app.YonaApplication;
 import nu.yona.app.api.manager.APIManager;
@@ -36,7 +29,6 @@ import nu.yona.app.ui.pincode.BasePasscodeActivity;
 import nu.yona.app.ui.pincode.PasscodeActivity;
 import nu.yona.app.ui.pincode.PasscodeFragment;
 import nu.yona.app.utils.AppConstant;
-import nu.yona.app.utils.AppUtils;
 
 /**
  * Created by kinnarvasa on 04/04/16.
@@ -45,7 +37,6 @@ public class OTPActivity extends BasePasscodeActivity implements EventChangeList
 
     private PasscodeFragment otpFragment;
     private RegisterUser user;
-    private static final int IMPORT_PROFILE = 0;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -106,7 +97,8 @@ public class OTPActivity extends BasePasscodeActivity implements EventChangeList
             @Override
             public void onDataLoad(Object result) {
                 getActivityCategories();
-                startServiceAndVPNConnection();
+                showLoadingView(false, null);
+                showPasscodeScreen();
             }
 
             @Override
@@ -158,45 +150,5 @@ public class OTPActivity extends BasePasscodeActivity implements EventChangeList
     private void showPasscodeScreen() {
         startActivity(new Intent(OTPActivity.this, PasscodeActivity.class));
         finish();
-    }
-
-    private void startServiceAndVPNConnection() {
-        AppUtils.writeToFile(this, new DataLoadListener() {
-            @Override
-            public void onDataLoad(Object result) {
-                importVPNProfile();
-            }
-
-            @Override
-            public void onError(Object errorMessage) {
-                showLoadingView(false, null);
-                showPasscodeScreen();
-            }
-        });
-
-    }
-
-    private void importVPNProfile() {
-        Intent startImport = new Intent(this, ConfigConverter.class);
-        startImport.setAction(ConfigConverter.IMPORT_PROFILE);
-        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + AppConstant.YONA_FOLDER + "/profile.ovpn");
-        startImport.setData(uri);
-        startActivityForResult(startImport, IMPORT_PROFILE);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case IMPORT_PROFILE:
-                if (resultCode == RESULT_OK) {
-                    YonaApplication.getUserPreferences().edit().putString(AppConstant.PROFILE_UUID, data.getStringExtra(VpnProfile.EXTRA_PROFILEUUID)).commit();
-                }
-                showLoadingView(false, null);
-                showPasscodeScreen();
-                break;
-            default:
-                break;
-        }
     }
 }
