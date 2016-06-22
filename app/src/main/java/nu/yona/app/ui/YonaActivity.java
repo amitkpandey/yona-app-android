@@ -318,8 +318,6 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                     YonaApplication.getUserPreferences().edit().putString(AppConstant.PROFILE_UUID, data.getStringExtra(VpnProfile.EXTRA_PROFILEUUID)).commit();
                 }
                 AppUtils.startVPN(this);
-            case AppConstant.WRITE_EXTERNAL_SYSTEM:
-                checkFileWritePermission();
                 break;
             default:
                 break;
@@ -972,6 +970,8 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
             }
         } else if (requestCode == AppConstant.READ_CONTACTS_PERMISSIONS_REQUEST) {
             openContactBook();
+        } else if (requestCode == AppConstant.WRITE_EXTERNAL_SYSTEM) {
+            checkFileWritePermission();
         }
     }
 
