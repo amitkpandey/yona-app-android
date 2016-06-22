@@ -24,7 +24,6 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
 import android.text.InputFilter;
 import android.text.Spanned;
@@ -409,7 +408,7 @@ public class AppUtils {
 
     public static void writeToFile(Context context, DataLoadListener listener) {
         try {
-            String folderPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + AppConstant.YONA_FOLDER;
+            String folderPath = context.getApplicationContext().getCacheDir() + "/" + AppConstant.YONA_FOLDER;
             if (!new File(folderPath).exists()) {
                 new File(folderPath).mkdir();
             }
@@ -428,7 +427,7 @@ public class AppUtils {
             osw.close();
             listener.onDataLoad("");
         } catch (Exception e) {
-            listener.onError("");
+            listener.onError(new ErrorMessage(e.getMessage()));
         }
     }
 

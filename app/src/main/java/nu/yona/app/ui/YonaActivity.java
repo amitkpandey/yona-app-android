@@ -318,6 +318,9 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                     YonaApplication.getUserPreferences().edit().putString(AppConstant.PROFILE_UUID, data.getStringExtra(VpnProfile.EXTRA_PROFILEUUID)).commit();
                 }
                 AppUtils.startVPN(this);
+            case AppConstant.WRITE_EXTERNAL_SYSTEM:
+                checkFileWritePermission();
+                break;
             default:
                 break;
         }
@@ -979,7 +982,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                 isToDisplayLogin = false;
                 skipVerification = true;
                 if (YonaApplication.getUserPreferences().getString(AppConstant.PROFILE_UUID, "").equals("")) {
-                    copyProfile();
+                    checkFileWritePermission();
                 } else {
                     AppUtils.startVPN(YonaActivity.this);
                 }
@@ -988,7 +991,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
     }
 
     private void copyProfile() {
-        AppUtils.writeToFile(YonaActivity.this, new DataLoadListener() {
+        AppUtils.writeToFile(this, new DataLoadListener() {
             @Override
             public void onDataLoad(Object result) {
                 importVPNProfile();
@@ -1001,12 +1004,21 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
         });
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
+    private void checkFileWritePermission() {
+        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, AppConstant.WRITE_EXTERNAL_SYSTEM);
+        } else {
+            copyProfile();
+        }
+    }
+
     private void importVPNProfile() {
         isToDisplayLogin = false;
         skipVerification = true;
         Intent startImport = new Intent(this, ConfigConverter.class);
         startImport.setAction(ConfigConverter.IMPORT_PROFILE);
-        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + AppConstant.YONA_FOLDER + "/profile.ovpn");
+        Uri uri = Uri.parse(getCacheDir() + "/" + AppConstant.YONA_FOLDER + "/profile.ovpn");
         startImport.setData(uri);
         startActivityForResult(startImport, IMPORT_PROFILE);
         AppUtils.startVPN(YonaActivity.this);
