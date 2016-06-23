@@ -386,6 +386,7 @@ public class AppUtils {
 
     public static void startVPN(Context context) {
         String profileUUID = YonaApplication.getUserPreferences().getString(AppConstant.PROFILE_UUID, "");
+        Log.e("profile UUID", "Profile UUID:" + profileUUID);
         VpnProfile profile = ProfileManager.get(context, profileUUID);
         if (!VpnStatus.isVPNActive()) {
             startVPN(profile, context);
@@ -394,6 +395,7 @@ public class AppUtils {
 
     private static void startVPN(VpnProfile profile, Context context) {
         if (profile != null) {
+            Log.e("Profile,", "Profile not null");
             Log.e(AppUtils.class.getSimpleName(), "Starting VPN with username and password");
             ProfileManager.getInstance(context).saveProfile(context, profile);
             Intent intent = new Intent(context, LaunchVPN.class);

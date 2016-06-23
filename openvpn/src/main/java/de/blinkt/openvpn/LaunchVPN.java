@@ -25,6 +25,7 @@ import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -109,6 +110,7 @@ public class LaunchVPN extends Activity {
                 profileToConnect = ProfileManager.getInstance(this).getProfileByName(shortcutName);
 
             if (profileToConnect == null) {
+                Log.e("LaunchVPN", getString(R.string.shortcut_profile_notfound));
                 VpnStatus.logError(R.string.shortcut_profile_notfound);
                 // show Log window to display error
                 showLogWindow();
