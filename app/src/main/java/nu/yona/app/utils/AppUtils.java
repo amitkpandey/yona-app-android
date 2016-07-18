@@ -381,4 +381,93 @@ public class AppUtils {
         scheduler = null;
     }
 
+<<<<<<< HEAD
+=======
+    public static void stopVPN(Context context) {
+        String profileUUID = YonaApplication.getUserPreferences().getString(AppConstant.PROFILE_UUID, "");
+        VpnProfile profile = ProfileManager.get(context, profileUUID);
+        if (VpnStatus.isVPNActive() && ProfileManager.getLastConnectedVpn() == profile) {
+            Intent disconnectVPN = new Intent(context, DisconnectVPN.class);
+            disconnectVPN.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(disconnectVPN);
+        }
+    }
+
+    public static void startVPN(Context context) {
+        String profileUUID = YonaApplication.getUserPreferences().getString(AppConstant.PROFILE_UUID, "");
+        VpnProfile profile = ProfileManager.get(context, profileUUID);
+        if (!VpnStatus.isVPNActive()) {
+            startVPN(profile, context);
+        }
+    }
+
+    private static void startVPN(VpnProfile profile, Context context) {
+        if (profile != null) {
+            Log.e(AppUtils.class.getSimpleName(), "Starting VPN with username and password");
+            ProfileManager.getInstance(context).saveProfile(context, profile);
+            Intent intent = new Intent(context, LaunchVPN.class);
+            profile.mUsername = "bsmith";
+            profile.mPassword = "yonaios";
+            intent.putExtra(LaunchVPN.EXTRA_KEY, profile.getUUID().toString());
+            intent.setAction(Intent.ACTION_MAIN);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        }
+    }
+
+    public static void writeToFile(Context context, DataLoadListener listener) {
+        try {
+            String folderPath = context.getApplicationContext().getCacheDir() + "/" + AppConstant.YONA_FOLDER;
+            if (!new File(folderPath).exists()) {
+                new File(folderPath).mkdir();
+            }
+            InputStream ims = context.getAssets().open("vpn_profile/profile.ovpn");
+
+            byte[] buffer = new byte[1024];
+            StringBuffer fileContent = new StringBuffer("");
+            int n;
+            while ((n = ims.read(buffer)) != -1) {
+                fileContent.append(new String(buffer, 0, n));
+            }
+            FileOutputStream fileOutputStream = new FileOutputStream(new File(folderPath, "profile.ovpn"));
+            OutputStreamWriter osw = new OutputStreamWriter(fileOutputStream);
+            osw.write(fileContent.toString());
+            osw.flush();
+            osw.close();
+            listener.onDataLoad("");
+        } catch (Exception e) {
+            listener.onError(new ErrorMessage(e.getMessage()));
+        }
+    }
+
+    private static String getStringFromInputStream(InputStream is) {
+
+        BufferedReader br = null;
+        StringBuilder sb = new StringBuilder();
+
+        String line;
+        try {
+
+            br = new BufferedReader(new InputStreamReader(is));
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return sb.toString();
+
+    }
+
+>>>>>>> d211084... VPN added as module
 }
