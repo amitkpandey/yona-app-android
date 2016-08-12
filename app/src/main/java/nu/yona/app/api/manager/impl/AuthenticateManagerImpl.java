@@ -16,6 +16,7 @@ import android.text.TextUtils;
 
 import nu.yona.app.R;
 import nu.yona.app.YonaApplication;
+import nu.yona.app.api.manager.APIManager;
 import nu.yona.app.api.manager.AuthenticateManager;
 import nu.yona.app.api.manager.dao.AuthenticateDAO;
 import nu.yona.app.api.manager.network.AuthenticateNetworkImpl;
@@ -96,11 +97,11 @@ public class AuthenticateManagerImpl implements AuthenticateManager {
         }
     }
 
-    public void registerUser(String url, RegisterUser user, final DataLoadListener listener){
+    public void registerUser(String url, RegisterUser user, final DataLoadListener listener) {
         authNetwork.registerUser(url, YonaApplication.getEventChangeManager().getSharedPreference().getYonaPassword(), user, new DataLoadListener() {
             @Override
             public void onDataLoad(Object result) {
-                if(result != null) {
+                if (result != null) {
                     YonaApplication.getEventChangeManager().getSharedPreference().getUserPreferences().edit().putBoolean(PreferenceConstant.STEP_REGISTER, true).commit();
                     updateDataForRegisterUser(result, listener);
                 }
@@ -108,7 +109,7 @@ public class AuthenticateManagerImpl implements AuthenticateManager {
 
             @Override
             public void onError(Object errorMessage) {
-                if(errorMessage instanceof ErrorMessage) {
+                if (errorMessage instanceof ErrorMessage) {
                     listener.onError(errorMessage);
                 } else {
                     listener.onError(new ErrorMessage(errorMessage.toString() != null ? errorMessage.toString() : ""));
@@ -116,6 +117,7 @@ public class AuthenticateManagerImpl implements AuthenticateManager {
             }
         });
     }
+
     /**
      * This will get response of server in case of register successful and store it in database, update on UI after that via listener.
      *
@@ -240,7 +242,10 @@ public class AuthenticateManagerImpl implements AuthenticateManager {
                         listener.onError(new ErrorMessage(mContext.getString(R.string.urlnotfound)));
                     }
                 } else {
-                    if (!TextUtils.isEmpty(YonaApplication.getEventChangeManager().getDataState().getUser().getLinks().getVerifyPinReset().getHref())) {
+                    if (YonaApplication.getEventChangeManager().getDataState().getUser() != null
+                            && YonaApplication.getEventChangeManager().getDataState().getUser().getLinks() != null
+                            && YonaApplication.getEventChangeManager().getDataState().getUser().getLinks().getVerifyPinReset() != null
+                            && !TextUtils.isEmpty(YonaApplication.getEventChangeManager().getDataState().getUser().getLinks().getVerifyPinReset().getHref())) {
                         authNetwork.doVerifyPin(authenticateDao.getUser().getLinks().getVerifyPinReset().getHref(), otp, new DataLoadListener() {
                             @Override
                             public void onDataLoad(Object result) {
@@ -283,8 +288,9 @@ public class AuthenticateManagerImpl implements AuthenticateManager {
         try {
             storedPassCode("");
             YonaApplication.getEventChangeManager().getSharedPreference().getUserPreferences().edit().putBoolean(PreferenceConstant.STEP_OTP, false).commit();
-            if (!TextUtils.isEmpty(authenticateDao.getUser().getLinks().getRequestPinReset().getHref())) {
-                authNetwork.doPasscodeReset(authenticateDao.getUser().getLinks().getRequestPinReset().getHref(), YonaApplication.getEventChangeManager().getSharedPreference().getYonaPassword(), new DataLoadListener() {
+            User user = authenticateDao.getUser();
+            if (user != null && user.getLinks() != null && user.getLinks().getRequestPinReset() != null && !TextUtils.isEmpty(user.getLinks().getRequestPinReset().getHref())) {
+                authNetwork.doPasscodeReset(user.getLinks().getRequestPinReset().getHref(), YonaApplication.getEventChangeManager().getSharedPreference().getYonaPassword(), new DataLoadListener() {
                     @Override
                     public void onDataLoad(Object result) {
                         getUser(result, listener);
@@ -466,11 +472,26 @@ public class AuthenticateManagerImpl implements AuthenticateManager {
                     listener.onError(new ErrorMessage(mContext.getString(R.string.urlnotfound)));
                 }
             } else {
-                listener.onError(new ErrorMessage(mContext.getString(R.string.urlnotfound)));
+                OverrideUser(listener);
             }
         } catch (Exception e) {
             AppUtils.throwException(AuthenticateManagerImpl.class.getSimpleName(), e, Thread.currentThread(), listener);
         }
+    }
+
+    private void OverrideUser(final DataLoadListener listener) {
+        APIManager.getInstance().getAuthenticateManager().requestUserOverride(YonaApplication.getEventChangeManager().getDataState().getRegisterUser().getMobileNumber(), new DataLoadListener() {
+
+            @Override
+            public void onDataLoad(Object result) {
+                listener.onDataLoad(result);
+            }
+
+            @Override
+            public void onError(Object errorMessage) {
+                listener.onError(new ErrorMessage(errorMessage.toString()));
+            }
+        });
     }
 
     @Override

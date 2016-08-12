@@ -24,7 +24,6 @@ import nu.yona.app.api.model.OTPVerficationCode;
 import nu.yona.app.api.model.PinResetDelay;
 import nu.yona.app.api.model.PostBudgetYonaGoal;
 import nu.yona.app.api.model.PostTimeZoneYonaGoal;
-import nu.yona.app.api.model.Properties;
 import nu.yona.app.api.model.RegisterUser;
 import nu.yona.app.api.model.User;
 import nu.yona.app.api.model.WeekActivity;
@@ -325,6 +324,7 @@ public interface RestApi {
     @GET
     Call<YonaMessages> getMessages(@Url String url, @Header(NetworkConstant.YONA_PASSWORD) String password,
                                    @Header(NetworkConstant.ACCEPT_LAUNGUAGE) String acceptLanaguage,
+                                   @Query("onlyUnreadMessages") boolean isUnreadMessage,
                                    @Query("size") int size, @Query("page") int page);
 
     /**
@@ -411,5 +411,5 @@ public interface RestApi {
     Call<YonaMessage> addComment(@Url String url, @Header(NetworkConstant.YONA_PASSWORD) String password, @Header(NetworkConstant.ACCEPT_LAUNGUAGE) String acceptLanaguage, @Body Message message);
 
     @POST
-    Call<YonaMessage> replyComment(@Url String url, @Header(NetworkConstant.YONA_PASSWORD) String password, @Header(NetworkConstant.ACCEPT_LAUNGUAGE) String acceptLanaguage, @Body Properties properties);
+    Call<YonaMessage> replyComment(@Url String url, @Header(NetworkConstant.YONA_PASSWORD) String password, @Header(NetworkConstant.ACCEPT_LAUNGUAGE) String acceptLanaguage, @Body MessageBody messageBody);
 }

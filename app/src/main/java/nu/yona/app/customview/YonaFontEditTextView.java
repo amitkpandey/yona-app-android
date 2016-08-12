@@ -13,8 +13,9 @@ import android.text.InputType;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.widget.EditText;
-import android.widget.TextView;
 
 /**
  * Created by bhargavsuthar on 3/31/16.
@@ -88,12 +89,5 @@ public class YonaFontEditTextView extends EditText {
             }
         }
         return super.onKeyUp(keyCode, event);
-    }
-
-
-    @Override
-    public boolean onKeyPreIme(int keyCode, KeyEvent event) {
-        Log.e("KEy", "Key :" + keyCode);
-        return super.onKeyPreIme(keyCode, event);
     }
 }

@@ -16,6 +16,7 @@ import nu.yona.app.R;
 import nu.yona.app.YonaApplication;
 import nu.yona.app.api.manager.APIManager;
 import nu.yona.app.api.model.EmbeddedYonaActivity;
+import nu.yona.app.api.model.RegisterUser;
 import nu.yona.app.api.model.User;
 import nu.yona.app.ui.BaseFragment;
 import nu.yona.app.ui.dashboard.DayActivityDetailFragment;
@@ -30,6 +31,8 @@ public class DataState {
     private EmbeddedYonaActivity embeddedDayActivity;
     private EmbeddedYonaActivity embeddedWeekActivity;
     private EmbeddedYonaActivity embeddedWithBuddyActivity;
+    private RegisterUser registerUser;
+    private int notificaitonCount;
 
     /**
      * Gets user.
@@ -149,4 +152,24 @@ public class DataState {
     public void setServerUrl(String serverUrl) {
         YonaApplication.getEventChangeManager().getSharedPreference().getUserPreferences().edit().putString(AppConstant.SERVER_URL, serverUrl).commit();
     }
+
+    public RegisterUser getRegisterUser() {
+        if (registerUser == null) {
+            registerUser = new RegisterUser();
+        }
+        return registerUser;
+    }
+
+    public void setRegisterUser(RegisterUser registerUser) {
+        this.registerUser = registerUser;
+    }
+
+    public int getNotificaitonCount() {
+        return notificaitonCount;
+    }
+
+    public void setNotificaitonCount(int notificaitonCount) {
+        this.notificaitonCount = notificaitonCount;
+    }
+
 }

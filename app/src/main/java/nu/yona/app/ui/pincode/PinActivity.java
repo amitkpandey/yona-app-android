@@ -53,8 +53,8 @@ public class PinActivity extends BasePasscodeActivity implements EventChangeList
         fragmentTransaction.commit();
 
         isUserBlocked = YonaApplication.getEventChangeManager().getSharedPreference().getUserPreferences().getBoolean(PreferenceConstant.USER_BLOCKED, false);
-        if (TextUtils.isEmpty(screen_type)) {
-            screen_type = AppConstant.LOGGED_IN;
+        if (TextUtils.isEmpty(screenType)) {
+            screenType = AppConstant.LOGGED_IN;
         }
         if (!isUserBlocked) {
             updateScreenUI();
@@ -135,6 +135,7 @@ public class PinActivity extends BasePasscodeActivity implements EventChangeList
                         public void onClick(DialogInterface dialogInterface, int i) {
                             dialogInterface.dismiss();
                             YonaApplication.getEventChangeManager().notifyChange(EventChangeManager.EVENT_CLOSE_YONA_ACTIVITY, null);
+                            APIManager.getInstance().getPasscodeManager().resetWrongCounter();
                             loadOTPScreen();
                         }
                     });
@@ -182,9 +183,6 @@ public class PinActivity extends BasePasscodeActivity implements EventChangeList
 
     private void updateData() {
         AppUtils.sendLogToServer(0);
-        YonaApplication.getEventChangeManager().getDataState().setEmbeddedDayActivity(null);
-        YonaApplication.getEventChangeManager().getDataState().setEmbeddedWeekActivity(null);
-        YonaApplication.getEventChangeManager().getDataState().setEmbeddedWithBuddyActivity(null);
         APIManager.getInstance().getActivityCategoryManager().getActivityCategoriesById(null);
     }
 }

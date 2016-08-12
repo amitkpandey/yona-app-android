@@ -12,27 +12,30 @@
     android:id="@+id/comment_box"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/white"
+    android:background="@color/white_two"
     android:orientation="horizontal"
     android:visibility="gone">
 
-    <nu.yona.app.customview.YonaFontEditTextView
+    <nu.yona.app.customview.YonaFontEditTextViewGeneral
         android:id="@+id/userMessage"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:background="@color/white"
+        android:inputType="textCapSentences"
         android:maxLines="5"
         android:minHeight="@dimen/fifty"
+        android:padding="@dimen/comment_box_msg_padding"
         android:scrollbars="vertical" />
 
     <nu.yona.app.customview.YonaFontButton
         android:id="@+id/btnSend"
         style="@style/BtnTxtSmall"
-        android:layout_width="@dimen/eighty"
+        android:layout_width="@dimen/send_bttuon"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@color/mid_blue"
         android:minHeight="@dimen/fifty"
         android:text="@string/send" />
+
 </LinearLayout>

@@ -27,6 +27,7 @@ import nu.yona.app.YonaApplication;
 import nu.yona.app.api.model.YonaBuddy;
 import nu.yona.app.api.model.YonaHeaderTheme;
 import nu.yona.app.enums.IntentEnum;
+import nu.yona.app.state.EventChangeListener;
 import nu.yona.app.state.EventChangeManager;
 import nu.yona.app.ui.BaseFragment;
 import nu.yona.app.ui.ViewPagerAdapter;
@@ -36,11 +37,13 @@ import nu.yona.app.utils.AppConstant;
 /**
  * Created by kinnarvasa on 21/03/16.
  */
-public class DashboardFragment extends BaseFragment {
+public class DashboardFragment extends BaseFragment implements EventChangeListener {
 
     private TabLayout tabLayout;
     private YonaHeaderTheme mYonaHeaderTheme;
     private YonaBuddy yonaBuddy;
+    private ViewPager viewPager;
+    private ViewPagerAdapter adapter;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -55,13 +58,13 @@ public class DashboardFragment extends BaseFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.viewpager_fragment, null);
+        YonaApplication.getEventChangeManager().registerListener(this);
         resetData();
         setupToolbar(view);
-
         if (mYonaHeaderTheme != null) {
             mToolBar.setBackgroundResource(mYonaHeaderTheme.getToolbar());
         }
-        ViewPager viewPager = (ViewPager) view.findViewById(R.id.viewPager);
+        viewPager = (ViewPager) view.findViewById(R.id.viewPager);
         tabLayout = (TabLayout) view.findViewById(R.id.tabs);
         setupViewPager(viewPager);
         tabLayout.setupWithViewPager(viewPager);
@@ -71,6 +74,7 @@ public class DashboardFragment extends BaseFragment {
     @Override
     public void onResume() {
         super.onResume();
+        YonaApplication.getEventChangeManager().notifyChange(EventChangeManager.EVENT_NOTIFICATION_COUNT, null);
         setTitleAndIcon();
     }
 
@@ -86,9 +90,15 @@ public class DashboardFragment extends BaseFragment {
         resetData();
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        YonaApplication.getEventChangeManager().unRegisterListener(this);
+    }
+
     private void setupViewPager(ViewPager viewPager) {
         setTabs();
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getChildFragmentManager());
+        adapter = new ViewPagerAdapter(getChildFragmentManager());
         PerDayFragment perDayFragment = new PerDayFragment();
         perDayFragment.setArguments(getArguments());
         PerWeekFragment perWeekFragment = new PerWeekFragment();
@@ -123,6 +133,7 @@ public class DashboardFragment extends BaseFragment {
                             leftIcon.setVisibility(View.GONE);
                             rightIcon.setVisibility(View.GONE);
                             rightIconProfile.setVisibility(View.VISIBLE);
+                            txtNotificationCounter.setVisibility(View.GONE);
                             rightIconProfile.setImageDrawable(TextDrawable.builder()
                                     .beginConfig().withBorder(AppConstant.PROFILE_ICON_BORDER_SIZE).endConfig()
                                     .buildRound(yonaBuddy.getEmbedded().getYonaUser().getFirstName().substring(0, 1).toUpperCase(),
@@ -136,6 +147,12 @@ public class DashboardFragment extends BaseFragment {
                                             ContextCompat.getColor(YonaActivity.getActivity(), R.color.mid_blue)));
                             rightIcon.setVisibility(View.VISIBLE);
                             rightIconProfile.setVisibility(View.GONE);
+                            if (YonaApplication.getEventChangeManager().getDataState().getNotificaitonCount() > 0) {
+                                txtNotificationCounter.setText("" + YonaApplication.getEventChangeManager().getDataState().getNotificaitonCount());
+                                txtNotificationCounter.setVisibility(View.VISIBLE);
+                            } else {
+                                txtNotificationCounter.setVisibility(View.GONE);
+                            }
                             rightIcon.setImageDrawable(ContextCompat.getDrawable(YonaActivity.getActivity(), R.drawable.icn_reminder));
 
                             rightIconClickEvent(rightIcon);
@@ -178,6 +195,13 @@ public class DashboardFragment extends BaseFragment {
      * @param rightIconView
      */
     private void rightIconClickEvent(View rightIconView) {
+        txtNotificationCounter.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent friendIntent = new Intent(IntentEnum.ACTION_MESSAGE.getActionString());
+                YonaActivity.getActivity().replaceFragment(friendIntent);
+            }
+        });
         rightIconView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -185,5 +209,16 @@ public class DashboardFragment extends BaseFragment {
                 YonaActivity.getActivity().replaceFragment(friendIntent);
             }
         });
+    }
+
+    @Override
+    public void onStateChange(int eventType, Object object) {
+        switch (eventType) {
+            case EventChangeManager.EVENT_UPDATE_NOTIFICATION_COUNT:
+                setTitleAndIcon();
+                break;
+            default:
+                break;
+        }
     }
 }

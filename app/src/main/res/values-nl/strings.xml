@@ -49,7 +49,9 @@
     <string name="passcodetryagain">Probeer opnieuw</string>
     <string name="pincode">PINCODE</string>
     <string name="passcodestep1title">Account aangemaakt</string>
+    <string name="passcodestep1retrytitle">PINcode komt niet overeen</string>
     <string name="passcodestep1desc">Voor een goede beveiliging is het verplicht om de Yona app te voorzien van een pincode. Stel je pincode hieronder in.</string>
+    <string name="passcodestep1retrydesc">Je tweede PINcode komt niet overeen met de eerste. Geef opnieuw een PINcode in.</string>
     <string name="passcodestep2title">Bevestig pincode</string>
     <string name="passcodestep2desc">Vul je pincode nog een keer in ter bevestiging.</string>
     <string name="msgblockuser">Om veiligheidsredenen is je account geblokkeerd. Gebruik de ‘PIN reset’ knop hieronder om je account opnieuw te activeren.</string>
@@ -89,6 +91,7 @@
     <string name="budgetgoaltitle">Tegoed</string>
     <string name="timezonegoalheadersubtext">Bepaal hier wanneer je wel of geen tijd aan %1$s wilt besteden</string>
     <string name="budgetgoalheadersubtext">Bepaal hier hoeveel tijd je aan %1$s wil besteden.</string>
+    <string name="timezonegoalsubtext">waarbinnen gebruik is toegestaan</string>
     <string name="timezone">Tijdzone</string>
     <string name="screentitle1">Transparantie</string>
     <string name="screentitle2">Delen</string>
@@ -177,4 +180,7 @@
     <string name="file_write_permission_detail">Yona wil bestanden op je telefoon bewaren. Je wordt doorgestuurd naar instellingen. Klik op \"Toestaan\" en zet Toestemming van opslag \"aan\".</string>
     <string name="certificate_installation">Certificaat Installeren</string>
     <string name="certfiicate_installtion_detail"> Om veiligheidsredenen is het installeren van een certificaat noodzakelijk. Klik op \"OK\".</string>
+    <string name="not_accepted_yet">heeft nog niet geaccepteerd</string>
+    <string name="vpn_disconnected">VPN Disconnected. Click to connect again.</string>
+    <string name="device_restart">Device Need to restart for establishing secure VPN connection.</string>
 </resources>

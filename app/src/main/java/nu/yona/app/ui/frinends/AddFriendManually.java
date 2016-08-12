@@ -15,7 +15,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
 import android.text.Editable;
-import android.text.InputFilter;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
@@ -40,7 +40,6 @@ import nu.yona.app.state.EventChangeListener;
 import nu.yona.app.state.EventChangeManager;
 import nu.yona.app.ui.BaseFragment;
 import nu.yona.app.ui.YonaActivity;
-import nu.yona.app.utils.AppUtils;
 
 /**
  * Created by kinnarvasa on 27/04/16.
@@ -62,7 +61,10 @@ public class AddFriendManually extends BaseFragment implements EventChangeListen
 
         @Override
         public void afterTextChanged(Editable s) {
-
+            if (s != null && s.length() > 0 && (s.length() == 1 || s.charAt(s.length() - 1) == ' ')) {
+                firstName.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+                lastName.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+            }
         }
     };
     private YonaFontButton addFriendButton;
@@ -90,6 +92,8 @@ public class AddFriendManually extends BaseFragment implements EventChangeListen
     }
 
     private void getView(View view) {
+        View activityRootView = view.findViewById(R.id.addfriendLayout);
+        udpateBottomTabVisibility(activityRootView);
         firstName = (YonaFontEditTextView) view.findViewById(R.id.first_name);
         lastName = (YonaFontEditTextView) view.findViewById(R.id.last_name);
         email = (YonaFontEditTextView) view.findViewById(R.id.email);
@@ -105,9 +109,6 @@ public class AddFriendManually extends BaseFragment implements EventChangeListen
         mobileNumberLayout = (TextInputLayout) view.findViewById(R.id.mobile_number_layout);
 
         addFriendButton = (YonaFontButton) view.findViewById(R.id.addFriendButton);
-
-        firstName.setFilters(new InputFilter[]{AppUtils.getFilter()});
-        lastName.setFilters(new InputFilter[]{AppUtils.getFilter()});
 
         mobileNumber.setNotEditableLength(getString(R.string.country_code_with_zero).length());
         mobileNumber.addTextChangedListener(new YonaPhoneWatcher(mobileNumber, getString(R.string.country_code_with_zero), getActivity(), mobileNumberLayout));

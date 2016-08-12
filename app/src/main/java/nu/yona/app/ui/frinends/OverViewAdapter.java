@@ -8,6 +8,7 @@
 
 package nu.yona.app.ui.frinends;
 
+import android.content.Context;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -24,6 +25,7 @@ import java.util.List;
 
 import nu.yona.app.R;
 import nu.yona.app.api.model.YonaBuddy;
+import nu.yona.app.enums.StatusEnum;
 import nu.yona.app.ui.StickyHeaderHolder;
 import nu.yona.app.ui.YonaActivity;
 import nu.yona.app.ui.message.MessageItemViewHolder;
@@ -35,6 +37,7 @@ public class OverViewAdapter extends RecyclerView.Adapter<MessageItemViewHolder>
 
     private final OnFriendsItemClickListener mOnFriendsItemClickListener;
     private List<YonaBuddy> listYonaMessage;
+    private Context context;
 
     /**
      * Instantiates a new Overview adapter.
@@ -42,8 +45,9 @@ public class OverViewAdapter extends RecyclerView.Adapter<MessageItemViewHolder>
      * @param yonaMessages      the yona messages
      * @param itemClickListener the item click listener
      */
-    public OverViewAdapter(final List<YonaBuddy> yonaMessages, OnFriendsItemClickListener itemClickListener) {
+    public OverViewAdapter(final List<YonaBuddy> yonaMessages, Context context, OnFriendsItemClickListener itemClickListener) {
         this.listYonaMessage = yonaMessages;
+        this.context = context;
         this.mOnFriendsItemClickListener = itemClickListener;
 
     }
@@ -72,9 +76,14 @@ public class OverViewAdapter extends RecyclerView.Adapter<MessageItemViewHolder>
 
             if (yonaObject.getEmbedded() != null) {
                 if (yonaObject.getEmbedded().getYonaUser() != null && !TextUtils.isEmpty(yonaObject.getEmbedded().getYonaUser().getFirstName())) {
-                    String userFirstname = yonaObject.getEmbedded().getYonaUser().getFirstName();
-                    holder.txtFooterMsg.setText(userFirstname);
-                    if (userFirstname.length() > 0) {
+
+                    if (StatusEnum.getStatusEnum(yonaObject.getReceivingStatus()) == StatusEnum.ACCEPTED) {
+                        String userFirstname = yonaObject.getEmbedded().getYonaUser().getFirstName();
+                        holder.txtFooterMsg.setText(userFirstname);
+                    } else {
+                        holder.txtFooterMsg.setText(context.getString(R.string.not_accepted_yet));
+                    }
+                    if (username.length() > 0) {
                         holder.img_avtar.setImageDrawable(TextDrawable.builder().buildRound(username.substring(0, 1).toUpperCase(),
                                 ContextCompat.getColor(YonaActivity.getActivity(), R.color.grape)));
                     }

@@ -23,13 +23,13 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.text.InputFilter;
-import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.View;
 
 import net.hockeyapp.android.ExceptionHandler;
 
@@ -48,7 +48,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import de.blinkt.openvpn.LaunchVPN;
 import de.blinkt.openvpn.VpnProfile;
-import de.blinkt.openvpn.activities.ConfigConverter;
 import de.blinkt.openvpn.activities.DisconnectVPN;
 import de.blinkt.openvpn.core.ProfileManager;
 import de.blinkt.openvpn.core.VpnStatus;
@@ -171,7 +170,7 @@ public class AppUtils {
      * @return random string
      */
     public static String getRandomString(int charLimit) {
-        char[] chars = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+        char[] chars = "abcdefghijkmnopqrstuvwxyz0123456789ABCDEFGHJKLMNOPQRSTUVWXYZ".toCharArray();
         StringBuilder sb = new StringBuilder();
         Random random = new Random();
         for (int i = 0; i < charLimit; i++) {
@@ -193,6 +192,8 @@ public class AppUtils {
         filter.addAction(Intent.ACTION_SCREEN_ON);
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_BOOT_COMPLETED);
+        filter.addAction("com.yona.app.RESTART_DEVICE");
+        filter.addAction("com.yona.app.RESTART_VPN");
         context.registerReceiver(receiver, filter);
     }
 
@@ -268,21 +269,21 @@ public class AppUtils {
      *
      * @return the filter
      */
-    public static InputFilter getFilter() {
-        if (filter == null) {
-            filter = new InputFilter() {
-                @Override
-                public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
-                    String blockCharacterSet = "~#^&|$%*!@/()-'\":;,?{}=!$^';,?×÷<>{}€£¥₩%~`¤♡♥_|《》¡¿°•○●□■◇◆♧♣▲▼▶◀↑↓←→☆★▪:-);-):-(:'(:O 1234567890";
-                    if (source != null && blockCharacterSet.contains(("" + source))) {
-                        return "";
-                    }
-                    return null;
-                }
-            };
-        }
-        return filter;
-    }
+//    public static InputFilter getFilter() {
+//        if (filter == null) {
+//            filter = new InputFilter() {
+//                @Override
+//                public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+//                    String blockCharacterSet = "~#^&|$%*!@/()-'\":;,?{}=!$^';,?×÷<>{}€£¥₩%~`¤♡♥_|《》¡¿°•○●□■◇◆♧♣▲▼▶◀↑↓←→☆★▪:-);-):-(:'(:O 1234567890";
+//                    if (source != null && blockCharacterSet.contains(("" + source))) {
+//                        return "";
+//                    }
+//                    return null;
+//                }
+//            };
+//        }
+//        return filter;
+//    }
 
     /**
      * Get splited time. ex: 21:00 - 23:54 whill return 21:00 and 23:54
@@ -408,15 +409,22 @@ public class AppUtils {
         }
     }
 
-    public static void startVPN(Context context) {
+    public static Intent startVPN(Context context, boolean returnIntent) {
         String profileUUID = YonaApplication.getEventChangeManager().getSharedPreference().getUserPreferences().getString(PreferenceConstant.PROFILE_UUID, "");
         VpnProfile profile = ProfileManager.get(context, profileUUID);
         User user = YonaApplication.getEventChangeManager().getDataState().getUser();
+
+
         if (profile != null && !VpnStatus.isVPNActive() && user != null && user.getVpnProfile() != null) {
             profile.mUsername = !TextUtils.isEmpty(user.getVpnProfile().getVpnLoginID()) ? user.getVpnProfile().getVpnLoginID() : "";
             profile.mPassword = !TextUtils.isEmpty(user.getVpnProfile().getVpnPassword()) ? user.getVpnProfile().getVpnPassword() : "";
-            startVPN(profile, context);
+            if (returnIntent) {
+                return getVPNIntent(profile, context);
+            } else {
+                startVPN(profile, context);
+            }
         }
+        return null;
     }
 
     private static void startVPN(VpnProfile profile, Context context) {
@@ -429,6 +437,19 @@ public class AppUtils {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         }
+    }
+
+    private static Intent getVPNIntent(VpnProfile profile, Context context) {
+        if (profile != null) {
+            ProfileManager.getInstance(context).saveProfile(context, profile);
+            Intent intent = new Intent(context, LaunchVPN.class);
+            intent.putExtra(LaunchVPN.EXTRA_KEY, profile.getUUID().toString());
+            intent.setAction(Intent.ACTION_MAIN);
+            intent.putExtra(AppConstant.FROM_LOGIN, true);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            return intent;
+        }
+        return null;
     }
 
     public static void downloadCertificates() {
@@ -514,12 +535,17 @@ public class AppUtils {
             if (ks != null) {
                 ks.load(null, null);
                 Enumeration aliases = ks.aliases();
-                while (aliases.hasMoreElements()) {
-                    String alias = (String) aliases.nextElement();
-                    java.security.cert.X509Certificate cert = (java.security.cert.X509Certificate) ks.getCertificate(alias);
-                    if (cert.getIssuerDN().getName().contains(AppConstant.CA_CERTIFICATE)) {
-                        isCertExist = true;
-                        break;
+                if (YonaApplication.getEventChangeManager().getDataState().getUser() != null && YonaApplication.getEventChangeManager().getDataState().getUser().getSslRootCertCN() != null) {
+                    String caCertName = YonaApplication.getEventChangeManager().getDataState().getUser().getSslRootCertCN();
+                    if (!TextUtils.isEmpty(caCertName)) {
+                        while (aliases.hasMoreElements()) {
+                            String alias = (String) aliases.nextElement();
+                            java.security.cert.X509Certificate cert = (java.security.cert.X509Certificate) ks.getCertificate(alias);
+                            if (cert.getIssuerDN().getName().contains(caCertName)) {
+                                isCertExist = true;
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -528,5 +554,18 @@ public class AppUtils {
         }
         return isCertExist;
 
+    }
+
+    public static boolean checkKeyboardOpen(View view) {
+        int defaultKeyboardDp = 100;
+        Rect r = new Rect();
+        view.getWindowVisibleDisplayFrame(r);
+
+        int estimatedKeyboardHeight = (int) TypedValue
+                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, defaultKeyboardDp, view.getResources().getDisplayMetrics());
+
+        view.getWindowVisibleDisplayFrame(r);
+        int heightDiff = view.getRootView().getHeight() - (r.bottom - r.top);
+        return heightDiff > estimatedKeyboardHeight;
     }
 }

@@ -20,12 +20,14 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -47,6 +49,7 @@ import nu.yona.app.state.EventChangeManager;
 import nu.yona.app.ui.YonaActivity;
 import nu.yona.app.ui.signup.OTPActivity;
 import nu.yona.app.utils.AppConstant;
+import nu.yona.app.utils.AppUtils;
 import nu.yona.app.utils.PreferenceConstant;
 
 /**
@@ -67,6 +70,20 @@ public class EditDetailsProfileFragment extends BaseProfileFragment implements E
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.edit_profile_detail_fragment, null);
+        final View activityRootView = view.findViewById(R.id.main_content);
+
+        activityRootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (isAdded()) {
+                    if (AppUtils.checkKeyboardOpen(activityRootView)) {
+                        ((YonaActivity) getActivity()).changeBottomTabVisibility(false);
+                    } else {
+                        ((YonaActivity) getActivity()).changeBottomTabVisibility(true);
+                    }
+                }
+            }
+        });
 
         setupToolbar(view);
 
@@ -89,7 +106,11 @@ public class EditDetailsProfileFragment extends BaseProfileFragment implements E
 
             @Override
             public void afterTextChanged(Editable s) {
-
+                if (s != null && s.length() > 0 && (s.length() == 1 || s.charAt(s.length() - 1) == ' ')) {
+                    firstName.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+                    lastName.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+                    nickName.setInputType(InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+                }
             }
         };
 
@@ -173,10 +194,11 @@ public class EditDetailsProfileFragment extends BaseProfileFragment implements E
 
 
         profileImage = (ImageView) view.findViewById(R.id.profileImage);
-        profileImage.setOnClickListener(listener);
-
         updateProfileImage = (ImageView) view.findViewById(R.id.updateProfileImage);
-        updateProfileImage.setOnClickListener(listener);
+        //TODO following 2 lines are disable until server implements Image upload feature.
+//        profileImage.setOnClickListener(listener);
+//        updateProfileImage.setOnClickListener(listener);
+        updateProfileImage.setVisibility(View.GONE);
         profileViewMode();
     }
 

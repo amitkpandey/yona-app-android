@@ -89,6 +89,10 @@ public class MessageStickyRecyclerAdapter extends RecyclerView.Adapter<MessageIt
                                     ContextCompat.getColor(activity, R.color.grape)));
                         }
                     }
+                } else if (!TextUtils.isEmpty(yonaObject.getNickname())) {
+                    holder.txtFooterMsg.setText(yonaObject.getNickname());
+                    holder.img_avtar.setImageDrawable(TextDrawable.builder().buildRound(yonaObject.getNickname().toString().substring(0, 1).toUpperCase(),
+                            ContextCompat.getColor(activity, R.color.grape)));
                 }
             } else if (!TextUtils.isEmpty(yonaObject.getNickname())) {
                 holder.txtFooterMsg.setText(yonaObject.getNickname());
@@ -98,6 +102,11 @@ public class MessageStickyRecyclerAdapter extends RecyclerView.Adapter<MessageIt
                     holder.img_avtar.setImageDrawable(TextDrawable.builder().buildRound(yonaObject.getNickname().substring(0, 1).toUpperCase(),
                             ContextCompat.getColor(activity, R.color.grape)));
                 }
+            }
+            if (yonaObject.getLinks() != null && yonaObject.getLinks().getMarkRead() != null && !TextUtils.isEmpty(yonaObject.getLinks().getMarkRead().getHref())) {
+                holder.messageContainer.setBackground(ContextCompat.getDrawable(activity, R.drawable.item_selected_gradient));
+            } else {
+                holder.messageContainer.setBackground(ContextCompat.getDrawable(activity, R.drawable.item_gradient));
             }
             holder.deleteMsg.setTag(yonaObject);
             holder.messageContainer.setTag(yonaObject);

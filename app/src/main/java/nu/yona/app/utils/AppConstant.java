@@ -70,6 +70,7 @@ public interface AppConstant {
      */
     int ONE_SECOND = 1000;
 
+    int THREE_SECOND = 3000;
     /**
      * The constant FIVE_SECONDS.
      */
@@ -285,5 +286,7 @@ public interface AppConstant {
 
     String YONA_FOLDER = "yonaFolder";
 
-    String CA_CERTIFICATE = "smoothwall003.yona";
+    String RESTART_VPN = "com.yona.app.RESTART_VPN";
+
+    String RESTART_DEVICE = "com.yona.app.RESTART_DEVICE";
 }

@@ -58,13 +58,13 @@ public class OverviewFragment extends BaseFragment implements EventChangeListene
         mFriendsRecyclerView = (RecyclerView) view.findViewById(R.id.listView);
         LinearLayoutManager mLayoutManager = new LinearLayoutManager(YonaActivity.getActivity());
         mFriendsRecyclerView.setLayoutManager(mLayoutManager);
-        mOverViewAdapter = new OverViewAdapter(mListBuddy, new OnFriendsItemClickListener() {
+        mOverViewAdapter = new OverViewAdapter(mListBuddy, YonaActivity.getActivity(), new OnFriendsItemClickListener() {
             @Override
             public void onFriendsItemClick(View v) {
-                Intent friendIntent = new Intent(IntentEnum.ACTION_DASHBOARD.getActionString());
-                Bundle bundle = new Bundle();
                 YonaBuddy yonaBuddy = (YonaBuddy) v.getTag();
                 if (yonaBuddy != null && !yonaBuddy.getSendingStatus().equals(StatusEnum.REQUESTED.getStatus())) {
+                    Intent friendIntent = new Intent(IntentEnum.ACTION_DASHBOARD.getActionString());
+                    Bundle bundle = new Bundle();
                     if (yonaBuddy.getLinks() != null) {
                         bundle.putSerializable(AppConstant.YONA_THEME_OBJ, new YonaHeaderTheme(true, yonaBuddy.getLinks().getYonaDailyActivityReports(), yonaBuddy.getLinks().getYonaWeeklyActivityReports(), 0, 0, yonaBuddy.getEmbedded().getYonaUser().getFirstName() + " " + yonaBuddy.getEmbedded().getYonaUser().getLastName(), R.color.mid_blue_two, R.drawable.triangle_shadow_blue));
                     } else {
@@ -79,6 +79,11 @@ public class OverviewFragment extends BaseFragment implements EventChangeListene
 
             @Override
             public void onFriendsItemDeleteClick(View v) {
+
+            }
+
+            @Override
+            public void onItemClick(View v) {
 
             }
         });

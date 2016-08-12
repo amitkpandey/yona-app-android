@@ -43,6 +43,7 @@ import nu.yona.app.api.model.EmbeddedYonaActivity;
 import nu.yona.app.api.model.ErrorMessage;
 import nu.yona.app.api.model.Href;
 import nu.yona.app.api.model.Message;
+import nu.yona.app.api.model.MessageBody;
 import nu.yona.app.api.model.Properties;
 import nu.yona.app.api.model.TimeZoneSpread;
 import nu.yona.app.api.model.User;
@@ -114,16 +115,18 @@ public class ActivityManagerImpl implements ActivityManager {
                         if (result instanceof DayActivity) {
                             try {
                                 DayActivity resultActivity = generateTimeZoneSpread((DayActivity) result);
-                                List<DayActivity> dayActivityList = YonaApplication.getEventChangeManager().getDataState().getEmbeddedDayActivity().getDayActivityList();
-                                for (int i = 0; i < dayActivityList.size(); i++) {
-                                    try {
-                                        if (dayActivityList.get(i).getLinks().getYonaDayDetails().getHref().equals(resultActivity.getLinks().getSelf().getHref())) {
-                                            dayActivityList.get(i).setTimeZoneSpread(resultActivity.getTimeZoneSpread());
-                                            YonaApplication.getEventChangeManager().getDataState().getEmbeddedDayActivity().getDayActivityList().set(i, updateLinks(dayActivityList.get(i), resultActivity));
-                                            break;
+                                if (YonaApplication.getEventChangeManager().getDataState().getEmbeddedDayActivity() != null) {
+                                    List<DayActivity> dayActivityList = YonaApplication.getEventChangeManager().getDataState().getEmbeddedDayActivity().getDayActivityList();
+                                    for (int i = 0; i < dayActivityList.size(); i++) {
+                                        try {
+                                            if (dayActivityList.get(i).getLinks().getYonaDayDetails().getHref().equals(resultActivity.getLinks().getSelf().getHref())) {
+                                                dayActivityList.get(i).setTimeZoneSpread(resultActivity.getTimeZoneSpread());
+                                                YonaApplication.getEventChangeManager().getDataState().getEmbeddedDayActivity().getDayActivityList().set(i, updateLinks(dayActivityList.get(i), resultActivity));
+                                                break;
+                                            }
+                                        } catch (Exception e) {
+                                            AppUtils.throwException(ActivityManagerImpl.class.getSimpleName(), e, Thread.currentThread(), null);
                                         }
-                                    } catch (Exception e) {
-                                        AppUtils.throwException(ActivityManagerImpl.class.getSimpleName(), e, Thread.currentThread(), null);
                                     }
                                 }
                             } catch (Exception e) {
@@ -328,34 +331,38 @@ public class ActivityManagerImpl implements ActivityManager {
 
     public void getCommentsForWeek(List<WeekActivity> weekActivityList, int position, final DataLoadListener listener) {
         int pageNo = 0;
-        WeekActivity weekActivity = weekActivityList.get(position);
-        if (weekActivity != null) {
-            if (weekActivity.getComments() != null && weekActivity.getComments().getPage() != null) {
-                if (weekActivity.getComments().getPage().getNumber() + 1 == weekActivity.getComments().getPage().getTotalPages()) {
-                    listener.onDataLoad(weekActivityList);
-                } else if (weekActivity.getComments().getEmbedded() != null) {
-                    pageNo = weekActivity.getComments().getPage().getNumber() + 1;
-                    getCommentsFromServerForWeek(weekActivityList, weekActivity, pageNo, listener);
+        if (weekActivityList != null && weekActivityList.size() > 0) {
+            WeekActivity weekActivity = weekActivityList.get(position);
+            if (weekActivity != null) {
+                if (weekActivity.getComments() != null && weekActivity.getComments().getPage() != null) {
+                    if (weekActivity.getComments().getPage().getNumber() + 1 == weekActivity.getComments().getPage().getTotalPages()) {
+                        listener.onDataLoad(weekActivityList);
+                    } else if (weekActivity.getComments().getEmbedded() != null) {
+                        pageNo = weekActivity.getComments().getPage().getNumber() + 1;
+                        getCommentsFromServerForWeek(weekActivityList, weekActivity, pageNo, listener);
+                    } else {
+                        getCommentsFromServerForWeek(weekActivityList, weekActivity, pageNo, listener);
+                    }
                 } else {
                     getCommentsFromServerForWeek(weekActivityList, weekActivity, pageNo, listener);
                 }
-            } else {
-                getCommentsFromServerForWeek(weekActivityList, weekActivity, pageNo, listener);
             }
         }
     }
 
     @Override
-    public void addComment(DayActivity dayActivity, String comment, DataLoadListener listener) {
+    public void addComment(String url, boolean isReplying, String comment, DataLoadListener listener) {
         Message message = new Message();
         message.setMessage(comment);
-        if (dayActivity != null && dayActivity.getLinks() != null) {
-            if (dayActivity.getLinks().getAddComment() != null) {
-                doAddComment(dayActivity.getLinks().getAddComment().getHref(), message, listener);
-            } else if (dayActivity.getLinks().getReplyComment() != null) {
+        if (!TextUtils.isEmpty(url)) {
+            if (isReplying) {
                 Properties properties = new Properties();
-                properties.setMessage(message);
-                reply(dayActivity.getLinks().getReplyComment().getHref(), properties, listener);
+                properties.setMessage(comment);
+                MessageBody body = new MessageBody();
+                body.setProperties(properties);
+                reply(url, body, listener);
+            } else {
+                doAddComment(url, message, listener);
             }
         }
     }
@@ -369,14 +376,16 @@ public class ActivityManagerImpl implements ActivityManager {
                 doAddComment(weekActivity.getLinks().getAddComment().getHref(), message, listener);
             } else if (weekActivity.getLinks().getReplyComment() != null) {
                 Properties properties = new Properties();
-                properties.setMessage(message);
-                reply(weekActivity.getLinks().getReplyComment().getHref(), properties, listener);
+                properties.setMessage(comment);
+                MessageBody messageBody = new MessageBody();
+                messageBody.setProperties(properties);
+                reply(weekActivity.getLinks().getReplyComment().getHref(), messageBody, listener);
             }
         }
     }
 
-    private void reply(String url, Properties properties, final DataLoadListener listener) {
-        activityNetwork.replyComment(url, YonaApplication.getEventChangeManager().getSharedPreference().getYonaPassword(), properties, new DataLoadListener() {
+    private void reply(String url, MessageBody messageBody, final DataLoadListener listener) {
+        activityNetwork.replyComment(url, YonaApplication.getEventChangeManager().getSharedPreference().getYonaPassword(), messageBody, new DataLoadListener() {
 
             @Override
             public void onDataLoad(Object result) {
@@ -427,9 +436,15 @@ public class ActivityManagerImpl implements ActivityManager {
                         if (weekActivity.getComments() == null) {
                             weekActivity.setComments(embeddedYonaActivity);
                         } else {
+                            if (weekActivity.getComments().getEmbedded() == null) {
+                                weekActivity.getComments().setEmbedded(new Embedded());
+                            }
+                            if (weekActivity.getComments().getEmbedded().getYonaMessages() == null) {
+                                weekActivity.getComments().getEmbedded().setYonaMessages(new ArrayList<YonaMessage>());
+                            }
                             if (embeddedYonaActivity.getEmbedded() != null && embeddedYonaActivity.getEmbedded().getYonaMessages() != null) {
                                 weekActivity.getComments().getEmbedded().getYonaMessages().addAll(embeddedYonaActivity.getEmbedded().getYonaMessages());
-                                weekActivity.getComments().setPage(embeddedYonaActivity.getEmbedded().getPage());
+                                weekActivity.getComments().setPage(embeddedYonaActivity.getPage());
                             }
                         }
                         updateWeekActivityList(weekActivityList, weekActivity, listener);
@@ -457,14 +472,14 @@ public class ActivityManagerImpl implements ActivityManager {
                 public void onDataLoad(Object result) {
                     if (result instanceof EmbeddedYonaActivity) {
                         EmbeddedYonaActivity embeddedYonaActivity = (EmbeddedYonaActivity) result;
-                        if (dayActivity.getComments() == null) {
+                        if (dayActivity.getComments() == null || dayActivity.getComments().getEmbedded() == null) {
                             dayActivity.setComments(embeddedYonaActivity);
                         } else {
                             if (dayActivity != null && dayActivity.getComments() != null
                                     && dayActivity.getComments().getEmbedded() != null && dayActivity.getComments().getEmbedded().getYonaMessages() != null
                                     && embeddedYonaActivity.getEmbedded() != null && embeddedYonaActivity.getEmbedded().getYonaMessages() != null) {
                                 dayActivity.getComments().getEmbedded().getYonaMessages().addAll(embeddedYonaActivity.getEmbedded().getYonaMessages());
-                                dayActivity.getComments().setPage(embeddedYonaActivity.getEmbedded().getPage());
+                                dayActivity.getComments().setPage(embeddedYonaActivity.getPage());
                             }
                         }
                         updateDayActivityList(dayActivityList, dayActivity, listener);
@@ -503,15 +518,21 @@ public class ActivityManagerImpl implements ActivityManager {
     }
 
     private void updateDayActivityList(List<DayActivity> dayActivityList, DayActivity dayActivity, DataLoadListener listener) {
-        for (int i = 0; i < dayActivityList.size(); i++) {
-            try {
-                if (dayActivityList.get(i).getLinks().getSelf().getHref().equals(dayActivity.getLinks().getSelf().getHref())) {
-                    dayActivityList.set(i, dayActivity);
-                    listener.onDataLoad(dayActivityList);
-                    break;
+        if (dayActivityList != null) {
+            for (int i = 0; i < dayActivityList.size(); i++) {
+                try {
+                    if (dayActivityList.get(i) != null && dayActivityList.get(i).getLinks() != null && dayActivityList.get(i).getLinks().getSelf() != null
+                            && !TextUtils.isEmpty(dayActivityList.get(i).getLinks().getSelf().getHref())
+                            && dayActivity.getLinks() != null && dayActivity.getLinks().getSelf() != null
+                            && !TextUtils.isEmpty(dayActivity.getLinks().getSelf().getHref())
+                            && dayActivityList.get(i).getLinks().getSelf().getHref().equals(dayActivity.getLinks().getSelf().getHref())) {
+                        dayActivityList.set(i, dayActivity);
+                        listener.onDataLoad(dayActivityList);
+                        break;
+                    }
+                } catch (Exception e) {
+                    AppUtils.throwException(ActivityManagerImpl.class.getSimpleName(), e, Thread.currentThread(), listener);
                 }
-            } catch (Exception e) {
-                AppUtils.throwException(ActivityManagerImpl.class.getSimpleName(), e, Thread.currentThread(), listener);
             }
         }
     }
@@ -899,7 +920,7 @@ public class ActivityManagerImpl implements ActivityManager {
                         && buddy.getEmbedded().getYonaGoals().getEmbedded().getYonaGoals() != null) {
                     List<YonaGoal> yonaGoals = buddy.getEmbedded().getYonaGoals().getEmbedded().getYonaGoals();
                     for (YonaGoal goal : yonaGoals) {
-                        if (goal.getLinks().getSelf().getHref().equals(goalHref.getHref())) {
+                        if (goal != null && goal.getLinks() != null && goal.getLinks().getSelf() != null && !TextUtils.isEmpty(goal.getLinks().getSelf().getHref()) && goal.getLinks().getSelf().getHref().equals(goalHref.getHref())) {
                             goal.setActivityCategoryName(getActivityCategory(goal));
                             goal.setNickName(buddy.getNickname());
                             return goal;

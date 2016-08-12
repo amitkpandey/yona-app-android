@@ -61,10 +61,6 @@ public class BasePasscodeActivity extends BaseActivity implements View.OnClickLi
      */
     protected ImageView accont_image;
     /**
-     * The Screen type.
-     */
-    protected String screen_type;
-    /**
      * The Passcode title.
      */
     protected YonaFontTextView passcode_title, /**
@@ -94,6 +90,7 @@ public class BasePasscodeActivity extends BaseActivity implements View.OnClickLi
      */
     protected View passcodeView;
     private AnimationSet animationView;
+    protected boolean isPasscodeFlowRetry;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -179,8 +176,8 @@ public class BasePasscodeActivity extends BaseActivity implements View.OnClickLi
     }
 
     private void doPasscodeReset() {
-        if (screen_type != null) {
-            switch (screen_type) {
+        if (screenType != null) {
+            switch (screenType) {
                 case AppConstant.OTP:
                     YonaApplication.getEventChangeManager().notifyChange(EventChangeManager.EVENT_OTP_RESEND, null);
                     break;
@@ -208,14 +205,14 @@ public class BasePasscodeActivity extends BaseActivity implements View.OnClickLi
      */
     protected void updateScreenUI() {
         unblockUserUpdateUI();
-        if (!TextUtils.isEmpty(screen_type)) {
-            if (screen_type.equalsIgnoreCase(AppConstant.LOGGED_IN)) {
+        if (!TextUtils.isEmpty(screenType)) {
+            if (screenType.equalsIgnoreCase(AppConstant.LOGGED_IN)) {
                 visibleLoginView();
                 populateLoginView();
-            } else if (screen_type.equalsIgnoreCase(AppConstant.OTP)) {
+            } else if (screenType.equalsIgnoreCase(AppConstant.OTP)) {
                 populateOTPView();
                 visibleView();
-            } else if (screen_type.equalsIgnoreCase(AppConstant.PIN_RESET_VERIFICATION)) {
+            } else if (screenType.equalsIgnoreCase(AppConstant.PIN_RESET_VERIFICATION)) {
                 populatePinResetVerificationView();
                 visibleLoginView();
                 visibleView();
@@ -325,8 +322,13 @@ public class BasePasscodeActivity extends BaseActivity implements View.OnClickLi
      */
     protected void populatePasscodeView() {
         accont_image.setImageResource(R.drawable.icn_account_created);
-        passcode_title.setText(getString(R.string.passcodestep1title));
-        passcode_description.setText(getString(R.string.passcodestep1desc));
+        if (isPasscodeFlowRetry) {
+            passcode_title.setText(getString(R.string.passcodestep1retrytitle));
+            passcode_description.setText(getString(R.string.passcodestep1retrydesc));
+        } else {
+            passcode_title.setText(getString(R.string.passcodestep1desc));
+            passcode_description.setText(getString(R.string.passcodestep1desc));
+        }
         profile_progress.setProgress(getResources().getInteger(R.integer.passcode_create_progress));
         passcode_error.setVisibility(View.GONE);
         updateTitle(getString(R.string.pincode));

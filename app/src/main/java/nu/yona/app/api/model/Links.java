@@ -119,7 +119,12 @@ public class Links extends BaseEntity {
     @SerializedName("yona:sslRootCert")
     @Expose
     private Href sslRootCert;
-
+    @SerializedName("yona:markRead")
+    @Expose
+    private Href markRead;
+    @SerializedName("yona:markUnread")
+    @Expose
+    private Href markUnRead;
     /**
      * Gets self.
      *
@@ -701,5 +706,21 @@ public class Links extends BaseEntity {
      */
     public void setSslRootCert(Href sslRootCert) {
         this.sslRootCert = sslRootCert;
+    }
+
+    public Href getMarkRead() {
+        return this.markRead;
+    }
+
+    public void setMarkRead(Href markRead) {
+        this.markRead = markRead;
+    }
+
+    public Href getMarkUnRead() {
+        return this.markUnRead;
+    }
+
+    public void setMarkUnRead(Href markUnRead) {
+        this.markUnRead = markUnRead;
     }
 }

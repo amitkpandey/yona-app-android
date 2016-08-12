@@ -113,6 +113,14 @@ public class EventChangeManager {
 
     public static final int EVENT_ROOT_CERTIFICATE_DOWNLOADED = 23;
 
+    public static final int EVENT_NOTIFICATION_COUNT = 24;
+
+    public static final int EVENT_UPDATE_NOTIFICATION_COUNT = 25;
+
+    public static final int EVENT_DEVICE_RESTART_REQUIRE = 26;
+
+    public static final int EVENT_RECONNECT_VPN = 27;
+
     private final Set<EventChangeListener> listeners = new HashSet<>();
 
     private DataState dataState;
@@ -171,6 +179,11 @@ public class EventChangeManager {
             dataState = new DataState();
         }
         return dataState;
+    }
+
+    public void clearAll() {
+        dataState = null;
+        sharedPreference = null;
     }
 
     public SharedPreference getSharedPreference() {

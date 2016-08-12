@@ -62,7 +62,9 @@ public class PasscodeActivity extends BasePasscodeActivity implements EventChang
 
     @Override
     public void onBackPressed() {
-        doBack();
+        if (PASSCODE_STEP != 1) {
+            finish();
+        }
     }
 
     @Override
@@ -165,6 +167,7 @@ public class PasscodeActivity extends BasePasscodeActivity implements EventChang
                 showChallengesScreen();
             }
         } else {
+            isPasscodeFlowRetry = true;
             doBack();
             first_passcode = "";
 

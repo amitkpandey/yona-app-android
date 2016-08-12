@@ -10,6 +10,9 @@ package nu.yona.app.ui;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -63,9 +66,11 @@ import nu.yona.app.api.model.ErrorMessage;
 import nu.yona.app.api.model.RegisterUser;
 import nu.yona.app.api.model.User;
 import nu.yona.app.api.model.YonaHeaderTheme;
+import nu.yona.app.api.model.YonaMessages;
 import nu.yona.app.api.utils.ServerErrorCode;
 import nu.yona.app.customview.CustomAlertDialog;
 import nu.yona.app.enums.IntentEnum;
+import nu.yona.app.listener.DataLoadListener;
 import nu.yona.app.state.EventChangeListener;
 import nu.yona.app.state.EventChangeManager;
 import nu.yona.app.ui.challenges.ChallengesFragment;
@@ -103,19 +108,21 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
     private static final int INSTALL_CERTIFICATE = 7;
     private static YonaActivity activity;
     private BaseFragment mContent, homeFragment;
-    private boolean isStateActive = false;
+    private boolean isStateActive;
     private boolean mStateSaved;
-    private boolean isBackPressed = false;
+    private boolean isBackPressed;
     private TabLayout mTabLayout;
     private boolean isToDisplayLogin = true;
-    private boolean skipVerification = false;
-    private boolean launchedPinActiivty = false;
+    private boolean skipVerification;
+    private boolean launchedPinActiivty;
     private int READ_EXTERNAL_STORAGE_REQUEST = 1;
     private int CAMERA_REQUEST = 2;
     private Fragment oldFragment;
     private User user;
     private boolean isUpdateIconOnly;
     private boolean isUserFromOnCreate;
+    private boolean isUserFromPinScreenAlert;
+    private boolean isSkipPinFlow;
 
     /**
      * Gets activity.
@@ -199,6 +206,14 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
         isUserFromOnCreate = true;
     }
 
+    public void changeBottomTabVisibility(boolean isVisible) {
+        if (isVisible) {
+            mTabLayout.setVisibility(View.VISIBLE);
+        } else {
+            mTabLayout.setVisibility(View.GONE);
+        }
+    }
+
     public void updateTabIcon(boolean isbuddyTab) {
         isUpdateIconOnly = true;
         if (isbuddyTab) {
@@ -212,6 +227,9 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
     private void updateTab(TabLayout.Tab tab) {
         switch (tab.getCustomView().getTag().hashCode()) {
             case R.string.dashboard:
+                getUserMessages();
+                YonaApplication.getEventChangeManager().getDataState().setEmbeddedDayActivity(null);
+                YonaApplication.getEventChangeManager().getDataState().setEmbeddedWeekActivity(null);
                 Bundle bundle = new Bundle();
                 if (user != null && user.getLinks() != null) {
                     bundle.putSerializable(AppConstant.YONA_THEME_OBJ, new YonaHeaderTheme(false, user.getLinks().getYonaDailyActivityReports(), user.getLinks().getYonaWeeklyActivityReports(), 0, R.drawable.icn_reminder, getString(R.string.dashboard), R.color.grape, R.drawable.triangle_shadow_grape));
@@ -223,6 +241,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                 replaceFragmentWithAction(dashboardIntent);
                 break;
             case R.string.friends:
+                YonaApplication.getEventChangeManager().getDataState().setEmbeddedWithBuddyActivity(null);
                 replaceFragmentWithAction(new Intent(IntentEnum.ACTION_FRIENDS.getActionString()));
                 break;
             case R.string.challenges:
@@ -238,13 +257,14 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
 
     @Override
     protected void onResume() {
-        Log.e(YonaActivity.class.getSimpleName(), "onResume");
         mStateSaved = false;
         if (isStateActive) {
             isStateActive = false;
         }
         super.onResume();
         if (isToDisplayLogin) {
+            getUserMessages();
+            isUserFromPinScreenAlert = true;
             Intent intent = new Intent(this, PinActivity.class);
             Bundle bundle = new Bundle();
             bundle.putString(AppConstant.SCREEN_TYPE, AppConstant.LOGGED_IN);
@@ -261,15 +281,38 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                 onBackPressed();
             }
             hideSoftInput();
+            changeBottomTabVisibility(true);
             if (isUserFromOnCreate) {
                 isUserFromOnCreate = false;
-                isToDisplayLogin = true;
                 getFileWritePermission();
             } else {
                 checkVPN();
             }
         }
     }
+
+
+    private void getUserMessages() {
+        showLoadingView(true, null);
+        APIManager.getInstance().getNotificationManager().getMessage(AppConstant.PAGE_SIZE, 0, true, new DataLoadListener() {
+            @Override
+            public void onDataLoad(Object result) {
+                showLoadingView(false, null);
+                if (result != null && result instanceof YonaMessages) {
+                    YonaMessages yonaMessages = (YonaMessages) result;
+                    YonaApplication.getEventChangeManager().getDataState().setNotificaitonCount(yonaMessages.getPage().getTotalElements());
+                    YonaApplication.getEventChangeManager().notifyChange(EventChangeManager.EVENT_UPDATE_NOTIFICATION_COUNT, null);
+                }
+            }
+
+            @Override
+            public void onError(Object errorMessage) {
+                showLoadingView(false, null);
+                showError((ErrorMessage) errorMessage);
+            }
+        });
+    }
+
 
     @Override
     public void onDestroy() {
@@ -325,6 +368,18 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
         } else if (!skipVerification) {
             isToDisplayLogin = true;
         } else {
+            if (isUserFromPinScreenAlert) {
+                isUserFromPinScreenAlert = false;
+                isToDisplayLogin = true;
+            } else if (isSkipPinFlow) {
+                isSkipPinFlow = false;
+                isToDisplayLogin = true;
+            } else if (isUserFromOnCreate) {
+                isToDisplayLogin = false;
+            } else {
+                isToDisplayLogin = true;
+                launchedPinActiivty = true;
+            }
             skipVerification = false;
         }
         mStateSaved = true;
@@ -349,24 +404,26 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                 if (resultCode == RESULT_OK) {
                     showContactDetails(data);
                 }
+                isToDisplayLogin = false;
                 break;
             case PICK_IMAGE:
                 if (resultCode == RESULT_OK) {
                     loadPickedImage(data);
                 }
+                isToDisplayLogin = false;
                 break;
             case PICK_CAMERA:
                 if (resultCode == RESULT_OK) {
                     loadCaptureImage(data);
                 }
+                isToDisplayLogin = false;
                 break;
             case IMPORT_PROFILE:
-                isToDisplayLogin = false;
                 if (resultCode == RESULT_OK) {
                     if (!TextUtils.isEmpty(data.getStringExtra(VpnProfile.EXTRA_PROFILEUUID))) {
                         Log.e("Start VPN", "Start VPN");
                         YonaApplication.getEventChangeManager().getSharedPreference().getUserPreferences().edit().putString(PreferenceConstant.PROFILE_UUID, data.getStringExtra(VpnProfile.EXTRA_PROFILEUUID)).commit();
-                        AppUtils.startVPN(this);
+                        AppUtils.startVPN(this, false);
                     } else {
                         importVPNProfile();
                     }
@@ -809,6 +866,14 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                 mContent.setUserVisibleHint(true);
                 if (mContent instanceof ChallengesFragment && ((ChallengesFragment) mContent).isChildViewVisible()) {
                     ((ChallengesFragment) mContent).updateView();
+                } else if (mContent instanceof DayActivityDetailFragment && ((DayActivityDetailFragment) mContent).isUserCommenting()) {
+                    ((DayActivityDetailFragment) mContent).updateParentcommentView();
+                } else if (mContent instanceof SingleDayActivityDetailFragment && ((SingleDayActivityDetailFragment) mContent).isUserCommenting()) {
+                    ((SingleDayActivityDetailFragment) mContent).updateParentcommentView();
+                } else if (mContent instanceof WeekActivityDetailFragment && ((WeekActivityDetailFragment) mContent).isUserCommenting()) {
+                    ((WeekActivityDetailFragment) mContent).updateParentcommentView();
+                } else if (mContent instanceof SingleWeekDayActivityDetailFragment && ((SingleWeekDayActivityDetailFragment) mContent).isUserCommenting()) {
+                    ((SingleWeekDayActivityDetailFragment) mContent).updateParentcommentView();
                 }
                 mContent.onStart();
                 mContent.onResume();
@@ -822,25 +887,45 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
 
     @Override
     public void onBackPressed() {
-        if (Foreground.get().isForeground()) {
-            AppUtils.setSubmitPressed(false);
-            if (mContent instanceof ChallengesFragment && ((ChallengesFragment) mContent).isChildViewVisible()) {
-                ((ChallengesFragment) mContent).updateView();
-            } else {
-                isBackPressed = true;
-                if (isStackEmpty() && !(mContent instanceof DashboardFragment)) {
-                    Fragment oldFragment = mContent;
-                    //todo - check which content of instace is that and according update the view
-                    mContent = homeFragment;
-                    mTabLayout.getTabAt(0).select();
-                    loadFragment(true, false, oldFragment);
-                    return;
+        if (mContent instanceof ChallengesFragment) {
+            if (Foreground.get().isForeground()) {
+                AppUtils.setSubmitPressed(false);
+                if (((ChallengesFragment) mContent).isChildViewVisible()) {
+                    ((ChallengesFragment) mContent).updateView();
+                } else {
+                    checkStackAndDoOnBackPressed();
                 }
-                super.onBackPressed();
+            } else {
+                AppUtils.setSubmitPressed(true);
             }
+        } else if (mContent instanceof DayActivityDetailFragment && ((DayActivityDetailFragment) mContent).isUserCommenting()) {
+            ((DayActivityDetailFragment) mContent).updateParentcommentView();
+        } else if (mContent instanceof SingleDayActivityDetailFragment && ((SingleDayActivityDetailFragment) mContent).isUserCommenting()) {
+            ((SingleDayActivityDetailFragment) mContent).updateParentcommentView();
+        } else if (mContent instanceof WeekActivityDetailFragment && ((WeekActivityDetailFragment) mContent).isUserCommenting()) {
+            ((WeekActivityDetailFragment) mContent).updateParentcommentView();
+        } else if (mContent instanceof SingleWeekDayActivityDetailFragment && ((SingleWeekDayActivityDetailFragment) mContent).isUserCommenting()) {
+            ((SingleWeekDayActivityDetailFragment) mContent).updateParentcommentView();
         } else {
-            AppUtils.setSubmitPressed(true);
+            checkStackAndDoOnBackPressed();
         }
+    }
+
+
+    private void checkStackAndDoOnBackPressed() {
+        isBackPressed = true;
+        if (isStackEmpty() && !(mContent instanceof DashboardFragment)) {
+            Fragment oldFragment = mContent;
+            //todo - check which content of instace is that and according update the view
+            mContent = homeFragment;
+            if (mContent instanceof NotificationFragment) {
+                getUserMessages();
+            }
+            mTabLayout.getTabAt(0).select();
+            loadFragment(true, false, oldFragment);
+            return;
+        }
+        super.onBackPressed();
     }
 
     /**
@@ -864,6 +949,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                 if (object != null && object instanceof ErrorMessage) {
                     showError((ErrorMessage) object);
                 }
+                YonaApplication.getEventChangeManager().clearAll();
                 break;
             case EventChangeManager.EVENT_CLEAR_ACTIVITY_LIST:
                 YonaApplication.getEventChangeManager().getDataState().clearActivityList(mContent);
@@ -876,6 +962,11 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
                 break;
             case EventChangeManager.EVENT_ROOT_CERTIFICATE_DOWNLOADED:
                 installCertificate();
+            case EventChangeManager.EVENT_NOTIFICATION_COUNT:
+                getUserMessages();
+                break;
+            case EventChangeManager.EVENT_DEVICE_RESTART_REQUIRE:
+                showDeviceRestartNotification(getString(R.string.device_restart));
                 break;
             default:
                 break;
@@ -886,10 +977,8 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
      * Open contact book.
      */
     public void openContactBook() {
-        isToDisplayLogin = false;
         Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
         startActivityForResult(intent, PICK_CONTACT);
-        skipVerification = true;
     }
 
     /**
@@ -1032,7 +1121,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
     }
 
     private void pickImage() {
-        Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
         startActivityForResult(intent, PICK_IMAGE);
         skipVerification = true;
@@ -1045,6 +1134,10 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
      */
     public boolean isToDisplayLogin() {
         return this.isToDisplayLogin;
+    }
+
+    public void setToDisplayLogin(boolean toDisplayLogin) {
+        this.isToDisplayLogin = toDisplayLogin;
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -1146,20 +1239,33 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
     }
 
     private void checkVPN() {
+        if (!getResources().getBoolean(R.bool.developerMode)) {
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Log.e("onPause", "Check VPN");
+                    isToDisplayLogin = false;
+                    skipVerification = true;
+                    if (YonaApplication.getEventChangeManager().getSharedPreference().getUserPreferences().getString(PreferenceConstant.PROFILE_UUID, "").equals("")) {
+                        checkFileWritePermission();
+                    } else {
+                        isUserFromOnCreate = true;
+                        AppUtils.startVPN(YonaActivity.this, false);
+                        isUserFromPinScreenAlert = false;
+                        lockScreen();
+                    }
+                }
+            }, AppConstant.ONE_SECOND);
+        }
+    }
+
+    private void lockScreen() {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (YonaApplication.getEventChangeManager().getSharedPreference().getUserPreferences().getString(PreferenceConstant.PROFILE_UUID, "").equals("")) {
-                    checkFileWritePermission();
-                } else {
-                    isUserFromOnCreate = true;
-                    isToDisplayLogin = false;
-                    skipVerification = true;
-                    Log.e("Start VPN", "Start VPN");
-                    AppUtils.startVPN(YonaActivity.this);
-                }
+                isSkipPinFlow = true;
             }
-        }, AppConstant.TIMER_DELAY_TWO_SEC);
+        }, AppConstant.THREE_SECOND);
     }
 
     @TargetApi(Build.VERSION_CODES.M)
@@ -1198,6 +1304,7 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
 
     private void importVPNProfile() {
         if (YonaApplication.getEventChangeManager().getSharedPreference().getVPNProfilePath() != null) {
+            setSkipVerification(true);
             Intent startImport = new Intent(this, ConfigConverter.class);
             startImport.setAction(ConfigConverter.IMPORT_PROFILE);
             Uri uri = Uri.parse(YonaApplication.getEventChangeManager().getSharedPreference().getVPNProfilePath());
@@ -1238,4 +1345,29 @@ public class YonaActivity extends BaseActivity implements FragmentManager.OnBack
             installCertificate();
         }
     }
+
+    private void showDeviceRestartNotification(final String message) {
+        Intent intent = new Intent(Intent.ACTION_REBOOT);
+        PendingIntent pIntent = PendingIntent.getActivity(this, (int) System.currentTimeMillis(), intent, 0);
+
+        Notification notification = new Notification.Builder(this).setContentTitle(getString(R.string.appname))
+                .setContentText(message)
+                .setTicker(getString(R.string.appname))
+                .setWhen(0)
+                .setVibrate(new long[]{1, 1, 1})
+                .setDefaults(Notification.DEFAULT_SOUND)
+                .setStyle(new Notification.BigTextStyle().bigText(message))
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                .setContentIntent(pIntent)
+                .setAutoCancel(false)
+                .build();
+
+        notification.flags |= Notification.FLAG_NO_CLEAR;
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(0, notification);
+    }
+
+
 }
